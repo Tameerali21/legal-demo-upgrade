@@ -105,6 +105,18 @@
         <p style="margin-top:14px"><a href="#" class="btn btn-gold btn-sm" data-action="book">Book a free consultation</a></p>
       </div>
     </div>
+    <div class="inbox-card">
+      <h3>📋 Captured leads</h3>
+      <p>Curious what &ldquo;Saved to your dashboard&rdquo; actually looks like? This inbox preview shows every lead Jordan captures &mdash; stored in your browser&rsquo;s local storage only. Nothing here ever leaves this page.</p>
+      <button id="inbox-toggle" class="btn btn-gold btn-sm" aria-expanded="false" aria-controls="inbox-panel">📋 View inbox <span id="inbox-count" class="inbox-count">0</span></button>
+    </div>
+    <div id="inbox-panel" class="inbox-panel" hidden>
+      <div class="inbox-head">
+        <b>📋 Captured leads inbox</b>
+        <span class="inbox-local">Browser-local preview &mdash; leads never leave this browser</span>
+      </div>
+      <div id="inbox-list" class="inbox-list"></div>
+    </div>
   </div>
 </section>
 
@@ -116,7 +128,7 @@
 
 <!-- ============ JORDAN CHAT WIDGET ============ -->
 <button id="maya-bubble" aria-label="Chat with Jordan">⚖️<span id="maya-unread" class="hidden">1</span></button>
-<div id="maya-panel" role="dialog" aria-label="Chat with Jordan">
+<div id="maya-panel" role="dialog" aria-label="Chat">
   <div class="maya-head">
     <div class="maya-avatar" id="maya-avatar-letter">J</div>
     <div class="who"><b id="maya-name">Jordan</b><span class="status"><i class="online"></i>Online — replies instantly</span></div>

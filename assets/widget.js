@@ -106,6 +106,55 @@ function saveLead(l){
   l.biz = BIZ; l.at = new Date().toISOString();
   leads.push(l);
   try { localStorage.setItem(LEAD_KEY, JSON.stringify(leads)); } catch(e){}
+  renderInbox(); /* keep the prospect-visible inbox panel live */
+}
+
+/* ---------- captured-leads inbox preview (prospect-visible panel) ----------
+   The after-hours card promises "Saved to your dashboard" — this panel makes
+   that claim visible on the page. Reads localStorage only, everything escaped. */
+var inboxEls = null;
+function inboxDom(){
+  if(!inboxEls){
+    var p = document.getElementById("inbox-panel"),
+        l = document.getElementById("inbox-list"),
+        t = document.getElementById("inbox-toggle"),
+        c = document.getElementById("inbox-count");
+    if(!p || !l || !t) return null;
+    inboxEls = { panel:p, list:l, toggle:t, count:c };
+  }
+  return inboxEls;
+}
+function fmtLeadTime(iso){
+  try {
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return iso || "";
+    return d.toLocaleString(undefined, { dateStyle:"medium", timeStyle:"short" });
+  } catch(e){ return iso || ""; }
+}
+function renderInbox(){
+  var dom = inboxDom();
+  if(!dom) return;
+  if(dom.count) dom.count.textContent = String(leads.length);
+  if(!leads.length){
+    dom.list.innerHTML = '<div class="inbox-empty"><b>No leads yet</b> &mdash; try the &#127769; 11:47 PM after-hours flow in the chat &mdash; the captured lead will appear right here.</div>';
+    return;
+  }
+  dom.list.innerHTML = leads.slice().reverse().map(function(l){
+    var when = l.at
+      ? '<time datetime="'+esc(l.at)+'">'+esc(fmtLeadTime(l.at))+'</time>'
+      : '&mdash;';
+    var detail = (l.details && l.details !== "—" && l.details !== "-")
+      ? '<div class="lead-detail">&ldquo;'+esc(l.details)+'&rdquo;</div>'
+      : "";
+    return '<div class="lead-row">' +
+      '<span class="lead-name">'+esc(l.name || "—")+'</span>' +
+      '<span class="lead-tag">'+esc(l.topic || "Lead")+'</span>' +
+      '<span class="lead-phone">'+esc(l.phone || "—")+'</span>' +
+      '<span class="lead-src">'+esc(l.source || "")+'</span>' +
+      '<div class="lead-when">Captured '+when+'</div>' +
+      detail +
+      '</div>';
+  }).join("");
 }
 
 /* ---------- rendering ---------- */
@@ -323,7 +372,8 @@ function afterHoursStep(text){
   }
   if(step.i === 3){
     d.summary = text.trim();
-    saveLead({ name:d.name, phone:d.phone, issue:d.issue, urgency:d.urgency, summary:d.summary, captured:"11:47 PM (after hours)", kind:"urgent-intake" });
+    saveLead({ name:d.name, phone:d.phone, issue:d.issue, urgency:d.urgency, summary:d.summary, captured:"11:47 PM (after hours)", kind:"urgent-intake",
+      topic:d.issue, details:d.summary, source:"after-hours 11:47 PM" });
     sayMany([
       "✅ <b>You're on the board.</b> The on-call attorney is paged and will call <b>"+esc(d.phone)+"</b> within the hour — not in the morning, <i>now</i>. ⚖️",
     ], function(){
@@ -420,7 +470,8 @@ function reviewStep(n){
     return;
   }
   if(step.i === 1){
-    saveLead({ kind:"review-feedback", rating:step.data.rating, feedback:text0(), note:"private, not posted" });
+    saveLead({ name:"(review feedback)", phone:"—", topic:"Private feedback", details:text0(), source:"review routing",
+      kind:"review-feedback", rating:step.data.rating, feedback:text0(), note:"private, not posted" });
     say("Noted — and I'm sorry we fell short. 🙏 Our managing partner will <b>personally follow up</b> within one business day to make this right.<br><br>Thank you for giving us the chance to fix it.", function(){
       step = { flow:null, i:0, data:{} }; setChips([]);
     });
@@ -492,6 +543,18 @@ document.querySelectorAll("[data-action]").forEach(function(el){
   });
 });
 
+/* ---------- captured-leads inbox toggle (prospect-visible "Saved to your dashboard") ---------- */
+var idom = inboxDom();
+if(idom){
+  renderInbox();
+  idom.toggle.addEventListener("click", function(){
+    var isHidden = idom.panel.hasAttribute("hidden");
+    if(isHidden){ idom.panel.removeAttribute("hidden"); renderInbox(); }
+    else { idom.panel.setAttribute("hidden", ""); }
+    idom.toggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
+  });
+}
+
 /* ---------- greeting ---------- */
 function greet(){
   sayMany([
@@ -508,9 +571,12 @@ setTimeout(greet, FAST ? 50 : 900);
 window.__maya = {
   open: openPanel, close: closePanel, say: userSays, send: userSays,
   state: function(){ return { step: step, leads: leads }; },
-  clearLeads: function(){ leads = []; try{ localStorage.removeItem(LEAD_KEY); }catch(e){} },
+  saveLead: saveLead, renderInbox: renderInbox,
+  getLeads: function(){ return leads; },
+  clearLeads: function(){ leads = []; try{ localStorage.removeItem(LEAD_KEY); }catch(e){} renderInbox(); },
   leadKey: LEAD_KEY, host: HOST, biz: BIZ
 };
+window.__clearLeads = function(){ leads = []; try{ localStorage.removeItem(LEAD_KEY); }catch(e){} renderInbox(); };
 
 })();
 
