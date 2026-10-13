@@ -20,6 +20,7 @@ var refPrefix = BIZ.replace(/^the\s+/i,"").split(/\s+/).filter(function(w){retur
 /* ---------- page personalization ---------- */
 function setText(id, v){ var el = document.getElementById(id); if(el) el.textContent = v; }
 setText("nav-biz", BIZ); setText("foot-biz", BIZ); setText("foot-city", CITY);
+setText("addr-biz", BIZ);
 setText("nav-city", CITY); setText("hero-city", CITY); setText("hero-tagline", TAGLINE);
 setText("addr-line", ADDRESS); setText("strip-addr", ADDRESS);
 setText("phone-line", PHONE); setText("strip-phone", PHONE);
