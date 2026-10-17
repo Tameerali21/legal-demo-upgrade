@@ -87,6 +87,12 @@ section.block{padding:72px 0}
 .addr-card p{margin:.3em 0; font-size:15px}
 .addr-card a{color:var(--blue-dark); font-weight:600}
 
+/* tap-to-call CTA (fleet standard, ported 2026-10-17) */
+.call-cta{margin-top:16px; background:var(--gold); color:#0a1a30; box-shadow:0 8px 20px rgba(201,162,39,.35)}
+.call-cta:hover{transform:translateY(-2px); background:var(--gold-dark); color:#0a1a30}
+.call-link{font-weight:700; color:#0a1a30; text-decoration:none; border-bottom:2px solid var(--gold)}
+.call-link:hover{border-color:var(--gold-dark)}
+
 /* footer */
 footer{padding:34px 0 90px; text-align:center; color:var(--muted); font-size:13.5px}
 

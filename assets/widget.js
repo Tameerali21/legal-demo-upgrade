@@ -24,8 +24,11 @@ setText("addr-biz", BIZ);
 setText("nav-city", CITY); setText("hero-city", CITY); setText("hero-tagline", TAGLINE);
 setText("addr-line", ADDRESS); setText("strip-addr", ADDRESS);
 setText("phone-line", PHONE); setText("strip-phone", PHONE);
-var sp = document.getElementById("strip-phone"); if(sp) sp.href = "tel:+" + PHONE.replace(/\D/g,"");
-var pl = document.getElementById("phone-line");  if(pl) pl.href = "tel:+" + PHONE.replace(/\D/g,"");
+/* tap-to-call binding (fleet standard, 2026-10-17): every tel: CTA follows ?phone=,
+   digits-and-plus-only in the href so an injected param can't smuggle markup/JS. */
+document.querySelectorAll("#call-cta, #strip-phone, #phone-line").forEach(function(el){
+  el.setAttribute("href", "tel:" + String(PHONE).replace(/[^+\d]/g, ""));
+});
 setText("maya-name", HOST); setText("maya-avatar-letter", HOST[0]);
 setText("maya-credit", BIZ + " · " + CITY);
 document.title = BIZ + " — " + TAGLINE + " in " + CITY;
@@ -86,6 +89,14 @@ var hasUnread = false, opened = false;
 
 function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
 function digits(s){ return String(s||"").replace(/\D/g,""); }
+
+/* ---------- tap-to-call helper (fleet standard, ported 2026-10-17) ----------
+   href is digits-and-plus-only (XSS-safe even from a hostile ?phone= param);
+   the visible text reuses the normal phone escaping. */
+function callLinkHtml(){
+  var href = "tel:" + String(PHONE).replace(/[^+\d]/g, "");
+  return '<a class="call-link" href="' + esc(href) + '">&#128222; Call ' + esc(PHONE) + '</a>';
+}
 
 /* ---------- word-start keyword matching (proven standard, 2026-10-03) ----------
    "foreclosure" must not trip the "close"→hours branch, "recall" must not trip the
@@ -293,7 +304,7 @@ function confirmBooking(){
     "⚖️ <b>Free consultation</b> — "+esc(step.data.matter)+"<br>📅 "+esc(step.data.day)+" at "+esc(step.data.time)+"<br>👤 "+esc(step.data.name)+"<br>🔖 Ref: <span class='ref'>"+ref+"</span>"
   ], function(){
     var extra = step.data.phone ? "We'll text <b>"+esc(step.data.phone)+"</b> a reminder before your slot. " : "";
-    say(extra + "Bring anything relevant — police report, photos, paperwork. And remember: free means free. See you soon! 😊", function(){
+    say(extra + "Bring anything relevant — police report, photos, paperwork. And remember: free means free. See you soon! 😊<br><br>Prefer to talk it through? " + callLinkHtml(), function(){
       setChips([{label:"Book another", value:"book another"}]);
       step = { flow:null, i:0, data:{} };
     });
@@ -507,8 +518,8 @@ function route(text){
   if(has(t,"practice area","what do you handle") || t.trim() === "services"){ say(practiceHtml(), function(){ setChips([{label:"Personal injury",value:"personal injury"},{label:"DUI defense",value:"dui defense"},{label:"Family law",value:"family law"},{label:"Estate planning",value:"estate planning"}]); }); return; }
   if(has(t,"fee","cost","price","how much","pricing","contingency")){ say(feesHtml(), function(){ setChips([{label:"Do I have a case?", value:"evaluate"}]); }); return; }
   if(has(t,"hour","open","close") || (has(t,"when") && has(t,"open","close"))){ say(hoursHtml()); return; }
-  if(has(t,"where","location","address","park","direction","office")){ say("You'll find us at <b>"+esc(ADDRESS)+"</b> 📍 — right in the heart of "+esc(CITY)+". Free parking validation for consultations. Prefer to start from your couch? The chat intake takes 2 minutes.", function(){ setChips([{label:"Free consultation", value:"book"}]); }); return; }
-  if(has(t,"human","real person","attorney","speak","talk to someone","lawyer","call")){ say("You can reach a human anytime at <b>"+esc(PHONE)+"</b> 📞 — 24/7 urgent line. Or I can keep helping right here — what's going on?"); return; }
+  if(has(t,"where","location","address","park","direction","office")){ say("You'll find us at <b>"+esc(ADDRESS)+"</b> 📍 — right in the heart of "+esc(CITY)+". Free parking validation for consultations. Prefer to start from your couch? The chat intake takes 2 minutes.<br><br>" + callLinkHtml() + " &mdash; we're happy to help anytime.", function(){ setChips([{label:"Free consultation", value:"book"}]); }); return; }
+  if(has(t,"human","real person","attorney","speak","talk to someone","lawyer","call")){ say("You can reach a human anytime at " + callLinkHtml() + " 📞 — 24/7 urgent line. Or I can keep helping right here — what's going on?"); return; }
   if(has(t,"thank","thx")){ say("Anytime! 😊 Anything else — a free consultation, the case intake, or practice-area questions?"); return; }
   if(has(t,"bye","goodbye","good night")){ say("Take care — and remember, the consultation is always free. ⚖️ I'll be here whenever you need "+esc(BIZ)+"."); setChips([]); step={flow:null,i:0,data:{}}; return; }
   if(has(t,"hello","hey") || hasWhole(t,"hi") || t.trim() === "yo"){ say("Hey! 👋 What can I do for you — a free consultation, the 2-minute case intake, or practice-area questions?", function(){ setChips([{label:"Free consultation",value:"book"},{label:"Do I have a case?",value:"evaluate"},{label:"🚨 Urgent help",value:"emergency"}]); }); return; }
