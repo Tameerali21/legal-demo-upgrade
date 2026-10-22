@@ -493,6 +493,69 @@ function reviewStep(n){
 function text0(){ return lastUserText; }
 var lastUserText = "";
 
+/* ---------- default greeting/fallback chips (5th = quiz) ---------- */
+function defaultChips(){
+  return [{label:"Free consultation",value:"book"},{label:"Do I have a case?",value:"evaluate"},{label:"Practice areas",value:"practice areas"},{label:"🚨 Urgent help",value:"emergency"},{label:"🧲 60-sec case quiz",value:"quiz"}];
+}
+
+/* ============================================================
+   FLOW 5 — 60-sec case-match quiz (fleet lead-capture pilot, 2026-10-22)
+   HONESTY (hard rule): Jordan NEVER invents case outcomes, win odds, fees, or
+   attorney guarantees — the quiz promises a personalized consultation PLAN for
+   the visitor's matter, never fabricated specifics.
+   ============================================================ */
+var QUIZ_TIMELINES = ["ASAP — it's urgent","This week","Within a month","Just researching"];
+function canonChoice(t, options){
+  var tl = t.toLowerCase();
+  for(var i=0;i<options.length;i++){ if(tl === options[i].toLowerCase()) return options[i]; }
+  return t.trim().slice(0,60); /* free text accepted, length-capped */
+}
+function startQuiz(){
+  step = { flow:"casequiz", i:0, data:{} };
+  say("⚖️ <b>The 60-second case quiz!</b><br><br>Three quick questions and I'll build your <b>case profile</b> — then a licensed attorney puts together a <b>personalized consultation plan</b> for your matter. No spam, no guesswork.<br><br><b>First: what's the matter about?</b>", function(){
+    setChips(MATTERS.map(function(r){ return {label:r, value:r}; }));
+  });
+}
+function quizStep(text){
+  var t = text.trim(), d = step.data;
+  if(step.i === 0){
+    d.matter = canonChoice(t, MATTERS); step.i = 1;
+    say("Got it — <b>"+esc(d.matter)+"</b>. ⚖️<br><br><b>How soon</b> do you need help?", function(){
+      setChips(QUIZ_TIMELINES.map(function(x){ return {label:x, value:x}; }));
+    });
+    return;
+  }
+  if(step.i === 1){
+    d.timeline = canonChoice(t, QUIZ_TIMELINES); step.i = 2;
+    say("Noted. ⚖️<br><br><b>What's your name</b> for the case profile?", function(){ setChips([]); });
+    return;
+  }
+  if(step.i === 2){
+    var nm = t;
+    if(nm.length < 2 || nm.length > 40){ say("And your <b>name</b> for the case profile?"); return; }
+    d.name = nm; step.i = 3;
+    say("Thanks, <b>"+esc(nm)+"</b>! And the best <b>number</b> to send your consultation plan to?", function(){ setChips([]); });
+    return;
+  }
+  if(step.i === 3){
+    if(digits(t).length < 7){ say("Hmm, that doesn't look like a complete number — mind double-checking it? <i>(digits only is fine)</i>"); return; }
+    d.phone = t;
+    finishQuiz();
+    return;
+  }
+}
+function finishQuiz(){
+  var d = step.data;
+  saveLead({ name:d.name, phone:d.phone, topic:"Case-match quiz — qualified lead",
+    details:"Matter "+d.matter+" · Timeline "+d.timeline, source:"case quiz", kind:"case-quiz" });
+  step = { flow:null, i:0, data:{} };
+  sayMany([
+    "✅ <b>Quiz complete!</b> ⚖️<br><br>Here's your <b>case profile</b>:",
+    "⚖️ <b>Matter:</b> "+esc(d.matter)+"<br>🕐 <b>Timeline:</b> "+esc(d.timeline),
+    "A licensed attorney will put together a <b>personalized consultation plan</b> for your matter and call <b>"+esc(d.phone)+"</b> — built around your situation, not a generic intake.<br><br>That's the whole point — <b>every visitor becomes a consultation</b>, not a missed customer. Anything else I can help with? 🤔"
+  ], function(){ setChips(defaultChips()); });
+}
+
 /* ============================================================
    router — word-start keyword matching (proven standard, 2026-10-03)
    ============================================================ */
@@ -502,6 +565,13 @@ function route(text){
   if(step.flow === "afterhours"){ afterHoursStep(text); return; }
   if(step.flow === "caseeval")  { evalStep(text); return; }
   if(step.flow === "review")    { reviewStep(parseInt(text,10) || 0); return; }
+  if(step.flow === "casequiz")  { quizStep(text); return; }
+
+  /* 60-sec case-match quiz (fleet lead-capture pilot, 2026-10-22): word-start
+     keywords only — verified that NO legal router keyword starts with 'qui',
+     so the quiz chip value 'quiz' can never be hijacked (the real-estate
+     'buy'/'buyer' bug class, 2026-10-20, does not apply here). */
+  if(has(t,"quiz","case quiz","case match","match quiz","intake quiz")){ startQuiz(); return; }
 
   /* urgent after-hours intake — "dui defense"-style info requests carve out to the DUI answer branch */
   if(has(t,"emergency","midnight","after hour","closed right now","11:47","arrested","in custody","jail","accident tonight","crash tonight") ||
@@ -526,7 +596,7 @@ function route(text){
 
   /* graceful fallback */
   say("Hmm, I want to make sure I get this right — I'm best with <b>free consultations</b>, the <b>2-minute case intake</b>, <b>practice areas &amp; fees</b>, and <b>urgent after-hours help</b>. Which one is it? 🤔", function(){
-    setChips([{label:"Free consultation",value:"book"},{label:"Do I have a case?",value:"evaluate"},{label:"Practice areas",value:"practice areas"},{label:"🚨 Urgent help",value:"emergency"}]);
+    setChips(defaultChips());
   });
 }
 
@@ -573,7 +643,7 @@ function greet(){
     "Hi there! ⚖️ I'm <b>"+esc(HOST)+"</b>, the client coordinator at <b>"+esc(BIZ)+"</b>.",
     "I can book your <b>free consultation</b>, run the 2-minute case intake, answer fee questions — and if it's midnight and urgent, I'm still here. 🚨<br><br>How can I help?"
   ], function(){
-    setChips([{label:"Free consultation",value:"book"},{label:"Do I have a case?",value:"evaluate"},{label:"Practice areas",value:"practice areas"},{label:"🚨 Urgent help",value:"emergency"}]);
+    setChips(defaultChips());
   });
   setTimeout(function(){ markUnread(); }, FAST ? 100 : 2500);
 }
