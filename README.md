@@ -19,6 +19,7 @@ Suite 210, Denver, CO 80202, (303) 555-0184 — all fictional, 555-range) with
 | "I was hurt in a crash" | Contingency explainer ("no fee unless we win") |
 | "divorce" / "will cost" / "how much do you charge" | Family / estate / fee Q&A |
 | "I want to leave a review" | 5★ → Google review button; <5★ → private feedback saved for the managing partner |
+| "🧲 60-sec case quiz" chip | Lead-capture pilot (fleet pattern): matter → timeline → name → phone (validated) → "✅ Quiz complete!" case-profile card + "Case-match quiz — qualified lead" saved to the inbox — Jordan promises a personalized consultation plan, never invented outcomes/fees |
 
 Leads persist in the browser only (`localStorage` key `nmc_legal_leads`) — no
 server, no external requests. The on-page **"Captured leads" inbox preview**
@@ -48,18 +49,18 @@ Add `?fast=1` to skip typing delays (used by the verifier).
 
 ## Automated checks
 
-91 end-to-end checks (incl. the Captured-leads inbox panel), zero console errors,
-zero network requests:
+151 end-to-end checks (incl. the Captured-leads inbox panel + the 2026-10-22
+60-sec case-match quiz), zero console errors, zero network requests:
 
 ```bash
-NODE_PATH=~/workspace/tools/pptr-setup/node_modules node ~/workspace/outreach/demo-deploy-zips/legal-verify-2026-10-13.js
+NODE_PATH=~/workspace/tools/pptr-setup/node_modules node ~/workspace/outreach/demo-deploy-zips/legal-verify-2026-10-22.js
 ```
 
 ## Files
 
 - `index.html` — fictional firm site (hero, practice areas, how-it-works, hours/location)
 - `assets/style.css` — navy + gold theme
-- `assets/widget.js` — Jordan chat widget (5 flows)
+- `assets/widget.js` — Jordan chat widget (6 flows)
 
 ## Honest limits (say these on calls)
 
